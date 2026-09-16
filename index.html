@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>텍스트 이펙트 랩</title>
+<style>
+  :root{
+    --bg:#0B0C10; --panel:#14161D; --line:#252833;
+    --ink:#F2F3F7; --ink-2:#8A90A2;
+    --accent:#FFCD00;
+    --c1:#FF4D6D; --c2:#4CC9F0; --c3:#B5FF3B; --c4:#C77DFF;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html{height:100%}
+  body{
+    min-height:100%;
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    background:var(--bg);color:var(--ink);
+    display:flex;justify-content:center;align-items:flex-start;padding:20px;
+  }
+  .wrap{width:100%;max-width:760px;display:flex;flex-direction:column;gap:14px}
+
+  header{display:flex;align-items:baseline;gap:10px}
+  header h1{font-size:19px;letter-spacing:-.5px}
+  header span{font-size:12px;color:var(--ink-2)}
+  header .spark{margin-left:auto;font-size:12px;color:var(--ink-2)}
+
+  /* ── 무대 ───────────────────────────── */
+  .stage{
+    position:relative;flex:0 0 auto;height:300px;min-height:260px;
+    border-radius:20px;overflow:hidden;
+    background:radial-gradient(circle at 50% 40%, #1A1D28 0%, #0B0C10 70%);
+    border:1px solid var(--line);
+    display:grid;place-items:center;padding:24px;
+  }
+  #fx{position:absolute;inset:0;pointer-events:none}
+  .text{
+    position:relative;z-index:2;text-align:center;line-height:1.25;
+    font-weight:900;letter-spacing:-.02em;word-break:keep-all;
+    font-size:clamp(28px, 7vw, 60px);
+  }
+  .text .ch{display:inline-block;white-space:pre;transform-origin:50% 50%}
+  .stage .empty{color:var(--ink-2);font-size:14px;font-weight:600}
+
+  /* ── 이펙트 ─────────────────────────── */
+  /* 1. 네온 */
+  .fx-neon .ch{
+    color:#fff;animation:neonIn .5s backwards, neonPulse 1.8s infinite;
+    animation-delay:calc(var(--i)*.05s), calc(var(--i)*.05s + .5s);
+  }
+  @keyframes neonIn{from{opacity:0;filter:blur(12px)}}
+  @keyframes neonPulse{
+    0%,100%{text-shadow:0 0 6px #fff,0 0 18px var(--c2),0 0 40px var(--c2)}
+    50%{text-shadow:0 0 3px #fff,0 0 9px var(--c2),0 0 20px var(--c2)}
+  }
+  /* 2. 글리치 */
+  .fx-glitch .ch{
+    color:#fff;animation:glitch .45s steps(3) infinite;
+    animation-delay:calc(var(--i)*.04s);
+  }
+  @keyframes glitch{
+    0%{transform:translate(0);text-shadow:2px 0 var(--c1),-2px 0 var(--c2)}
+    33%{transform:translate(-2px,1px);text-shadow:-3px 0 var(--c1),3px 0 var(--c2)}
+    66%{transform:translate(2px,-1px);text-shadow:3px 0 var(--c2),-3px 0 var(--c1)}
+    100%{transform:translate(0);text-shadow:2px 0 var(--c1),-2px 0 var(--c2)}
+  }
+  /* 3. 타자기 */
+  .fx-type .ch{
+    opacity:0;animation:typeIn .01s forwards;
+    animation-delay:calc(var(--i)*.09s);
+  }
+  @keyframes typeIn{to{opacity:1}}
+  .fx-type::after{
+    content:'';display:inline-block;width:.08em;height:.9em;background:var(--accent);
+    vertical-align:-.08em;animation:caret .7s steps(1) infinite;
+  }
+  @keyframes caret{50%{opacity:0}}
+  /* 4. 무지개 웨이브 */
+  .fx-wave .ch{
+    background:linear-gradient(90deg,var(--c1),var(--accent),var(--c3),var(--c2),var(--c4));
+    background-size:600% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+    animation:wave 1.6s ease-in-out infinite, flow 4s linear infinite;
+    animation-delay:calc(var(--i)*.07s), 0s;
+  }
+  @keyframes wave{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}}
+  @keyframes flow{to{background-position:600% 0}}
+  /* 5. 젤리 */
+  .fx-jelly .ch{
+    color:var(--c3);animation:jelly .8s cubic-bezier(.3,1.6,.5,1) backwards;
+    animation-delay:calc(var(--i)*.06s);
+  }
+  @keyframes jelly{
+    0%{transform:scale(0) rotate(-20deg);opacity:0}
+    60%{transform:scale(1.25,.8)}
+    80%{transform:scale(.92,1.12)}
+    100%{transform:scale(1)}
+  }
+  /* 6. 3D 플립 */
+  .fx-flip{perspective:800px}
+  .fx-flip .ch{
+    color:#fff;animation:flip .7s backwards;
+    animation-delay:calc(var(--i)*.07s);
+    text-shadow:0 6px 18px rgba(0,0,0,.6);
+  }
+  @keyframes flip{
+    from{transform:rotateX(-92deg) translateY(30px);opacity:0;color:var(--accent)}
+  }
+  /* 7. 화염 */
+  .fx-fire .ch{
+    color:#FFE9A8;
+    text-shadow:0 -2px 6px #FF8A00,0 -6px 16px #FF3D00,0 -12px 30px #B30000;
+    animation:fire .45s ease-in-out infinite alternate;
+    animation-delay:calc(var(--i)*.08s);
+  }
+  @keyframes fire{
+    to{transform:translateY(-4px) scaleY(1.06);
+       text-shadow:0 -3px 10px #FFB300,0 -10px 24px #FF5400,0 -20px 44px #C21800}
+  }
+  /* 8. 매트릭스 */
+  .fx-matrix .ch{
+    color:#39FF6A;font-family:ui-monospace,"SF Mono",Menlo,monospace;
+    text-shadow:0 0 8px #39FF6A;
+    animation:mtx .6s backwards;animation-delay:calc(var(--i)*.05s);
+  }
+  @keyframes mtx{from{opacity:0;transform:translateY(-26px);filter:blur(3px)}}
+  /* 9. 분해 */
+  .fx-split .ch{
+    color:#fff;animation:split 2.2s ease-in-out infinite;
+    animation-delay:calc(var(--i)*.05s);
+  }
+  @keyframes split{
+    0%,100%{transform:translate(0) rotate(0);opacity:1}
+    50%{transform:translate(calc(var(--r1)*14px), calc(var(--r2)*14px)) rotate(calc(var(--r1)*12deg));opacity:.55}
+  }
+  /* 10. 스탬프 */
+  .fx-stamp .ch{
+    color:var(--c1);animation:stamp .5s cubic-bezier(.2,1.4,.4,1) backwards;
+    animation-delay:calc(var(--i)*.05s);
+  }
+  @keyframes stamp{from{transform:scale(3);opacity:0;filter:blur(6px)}}
+
+  /* ── 컨트롤 ─────────────────────────── */
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:14px}
+  .inputRow{display:flex;gap:8px}
+  input[type=text]{
+    flex:1;background:#0E1016;border:1.5px solid var(--line);border-radius:12px;
+    padding:14px 16px;color:var(--ink);font-size:15px;font-family:inherit;font-weight:600;
+  }
+  input[type=text]:focus{outline:0;border-color:var(--accent)}
+  button{font-family:inherit;cursor:pointer;border:0}
+  .go{background:var(--accent);color:#111;border-radius:12px;padding:0 20px;font-size:15px;font-weight:800}
+  .go:active{transform:scale(.97)}
+
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+  .chip{
+    background:#0E1016;border:1.5px solid var(--line);color:var(--ink-2);
+    border-radius:999px;padding:8px 13px;font-size:12.5px;font-weight:700;
+  }
+  .chip.on{background:var(--accent);border-color:var(--accent);color:#111}
+  .chip.rand{border-color:var(--accent);color:var(--accent)}
+
+  .sliders{display:flex;gap:14px;margin-top:14px;flex-wrap:wrap}
+  .sl{flex:1;min-width:150px}
+  .sl label{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink-2);
+    font-weight:700;margin-bottom:6px}
+  .sl input[type=range]{width:100%;accent-color:var(--accent)}
+  .hint{font-size:11.5px;color:var(--ink-2);text-align:center;line-height:1.7}
+  kbd{background:#0E1016;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:11px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>텍스트 이펙트 랩</h1>
+    <span>Text Effect Lab</span>
+    <span class="spark" id="count">0번 터뜨림</span>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="fx"></canvas>
+    <div class="text" id="text"><span class="empty">텍스트를 입력하고 Enter를 눌러보세요</span></div>
+  </div>
+
+  <div class="panel">
+    <div class="inputRow">
+      <input type="text" id="inp" maxlength="24" placeholder="여기에 아무 말이나 입력해보세요" autocomplete="off">
+      <button class="go" id="goBtn">터뜨리기</button>
+    </div>
+
+    <div class="chips" id="chips"></div>
+
+    <div class="sliders">
+      <div class="sl">
+        <label>글자 크기 <b id="szV">100%</b></label>
+        <input type="range" id="sz" min="50" max="180" value="100">
+      </div>
+      <div class="sl">
+        <label>속도 <b id="spV">1.0x</b></label>
+        <input type="range" id="sp" min="30" max="250" value="100">
+      </div>
+      <div class="sl">
+        <label>파티클 <b id="ptV">보통</b></label>
+        <input type="range" id="pt" min="0" max="3" value="2">
+      </div>
+    </div>
+  </div>
+
+  <p class="hint">
+    <kbd>Enter</kbd> 터뜨리기 · <kbd>Space</kbd> 랜덤 이펙트로 다시 · <kbd>1</kbd>~<kbd>0</kbd> 이펙트 바로 선택
+  </p>
+</div>
+
+<script>
+(function(){
+  const EFFECTS = [
+    {id:'neon',   name:'네온'},
+    {id:'glitch', name:'글리치'},
+    {id:'type',   name:'타자기'},
+    {id:'wave',   name:'무지개'},
+    {id:'jelly',  name:'젤리'},
+    {id:'flip',   name:'3D 플립'},
+    {id:'fire',   name:'화염'},
+    {id:'matrix', name:'매트릭스'},
+    {id:'split',  name:'분해'},
+    {id:'stamp',  name:'스탬프'}
+  ];
+  const BURST = {
+    neon:['#4CC9F0','#ffffff'], glitch:['#FF4D6D','#4CC9F0'], type:['#FFCD00'],
+    wave:['#FF4D6D','#FFCD00','#B5FF3B','#4CC9F0','#C77DFF'], jelly:['#B5FF3B'],
+    flip:['#FFCD00','#ffffff'], fire:['#FF8A00','#FF3D00','#FFE9A8'],
+    matrix:['#39FF6A'], split:['#ffffff','#8A90A2'], stamp:['#FF4D6D','#FFCD00']
+  };
+
+  const stage = document.getElementById('stage');
+  const textEl= document.getElementById('text');
+  const inp   = document.getElementById('inp');
+  const chips = document.getElementById('chips');
+  const cv    = document.getElementById('fx');
+  const ctx   = cv.getContext('2d');
+  const elCnt = document.getElementById('count');
+
+  let effect = 'neon', bursts = 0;
+  let sz = 1, speed = 1, ptLevel = 2;
+
+  // 이펙트 칩
+  EFFECTS.forEach((e,i)=>{
+    const b = document.createElement('button');
+    b.className = 'chip' + (i===0?' on':'');
+    b.textContent = (i+1===10?0:i+1) + '. ' + e.name;
+    b.dataset.fx = e.id;
+    b.onclick = ()=>{ effect = e.id; syncChips(); play(); };
+    chips.appendChild(b);
+  });
+  const randBtn = document.createElement('button');
+  randBtn.className = 'chip rand';
+  randBtn.textContent = '🎲 랜덤';
+  randBtn.onclick = ()=>{
+    effect = EFFECTS[Math.floor(Math.random()*EFFECTS.length)].id;
+    syncChips(); play();
+  };
+  chips.appendChild(randBtn);
+
+  function syncChips(){
+    [...chips.querySelectorAll('.chip')].forEach(c=>
+      c.classList.toggle('on', c.dataset.fx === effect));
+  }
+
+  // 슬라이더
+  const bind = (id, valId, fn, fmt) => {
+    const el = document.getElementById(id), out = document.getElementById(valId);
+    el.oninput = ()=>{ fn(+el.value); out.textContent = fmt(+el.value); };
+  };
+  bind('sz','szV', v=>{ sz = v/100; apply(); }, v=>v+'%');
+  bind('sp','spV', v=>{ speed = v/100; apply(); }, v=>(v/100).toFixed(1)+'x');
+  bind('pt','ptV', v=>{ ptLevel = v; }, v=>['없음','약하게','보통','강하게'][v]);
+
+  function apply(){
+    textEl.style.fontSize = 'clamp(' + (28*sz) + 'px, ' + (7*sz) + 'vw, ' + (60*sz) + 'px)';
+    textEl.style.setProperty('animation-duration','');
+    textEl.querySelectorAll('.ch').forEach(ch=>{
+      ch.style.animationDuration = '';
+      ch.style.animationPlayState = 'running';
+    });
+    textEl.style.setProperty('--spd', speed);
+    // 속도는 각 글자의 animation-duration 배율로 반영
+    textEl.querySelectorAll('.ch').forEach(ch=>{
+      const cs = getComputedStyle(ch).animationDuration.split(',');
+      ch.style.animationDuration = cs.map(d=>{
+        const s = parseFloat(d) / speed;
+        return (isNaN(s) ? d : s + 's');
+      }).join(',');
+    });
+  }
+
+  function play(){
+    const raw = inp.value.trim();
+    if(!raw){
+      textEl.innerHTML = '<span class="empty">텍스트를 입력하고 Enter를 눌러보세요</span>';
+      textEl.className = 'text';
+      inp.focus();
+      return;
+    }
+    textEl.className = 'text fx-' + effect;
+    textEl.innerHTML = '';
+    [...raw].forEach((c,i)=>{
+      const s = document.createElement('span');
+      s.className = 'ch';
+      s.textContent = c;
+      s.style.setProperty('--i', i);
+      s.style.setProperty('--r1', (Math.random()*2-1).toFixed(2));
+      s.style.setProperty('--r2', (Math.random()*2-1).toFixed(2));
+      textEl.appendChild(s);
+    });
+    apply();
+    burst();
+    bursts++; elCnt.textContent = bursts + '번 터뜨림';
+  }
+
+  // ── 파티클 ──────────────────────────
+  let parts = [], raf = 0;
+  function resize(){
+    cv.width  = stage.clientWidth  * devicePixelRatio;
+    cv.height = stage.clientHeight * devicePixelRatio;
+    cv.style.width = stage.clientWidth + 'px';
+    cv.style.height= stage.clientHeight + 'px';
+    ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+  }
+  addEventListener('resize', resize); resize();
+
+  function burst(){
+    if(ptLevel === 0) return;
+    const n = [0,18,40,80][ptLevel];
+    const colors = BURST[effect] || ['#fff'];
+    const box = stage.getBoundingClientRect();
+    const chs = [...textEl.querySelectorAll('.ch')];
+    const src = chs.length ? chs : [textEl];
+    for(let i=0;i<n;i++){
+      const r = src[Math.floor(Math.random()*src.length)].getBoundingClientRect();
+      const a = Math.random()*Math.PI*2, v = 1.2 + Math.random()*4;
+      parts.push({
+        x:r.left - box.left + r.width/2,
+        y:r.top  - box.top  + r.height/2,
+        vx:Math.cos(a)*v, vy:Math.sin(a)*v - 1,
+        life:1, size:1.5 + Math.random()*3,
+        c:colors[Math.floor(Math.random()*colors.length)]
+      });
+    }
+    if(!raf) raf = requestAnimationFrame(tick);
+  }
+
+  function tick(){
+    ctx.clearRect(0,0,cv.width,cv.height);
+    parts = parts.filter(p=>p.life > 0);
+    parts.forEach(p=>{
+      p.x += p.vx*speed; p.y += p.vy*speed;
+      p.vy += 0.07*speed; p.vx *= .99;
+      p.life -= 0.016*speed;
+      ctx.globalAlpha = Math.max(0, p.life);
+      ctx.fillStyle = p.c;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size*p.life, 0, Math.PI*2);
+      ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+    raf = parts.length ? requestAnimationFrame(tick) : 0;
+  }
+
+  // ── 입력 ────────────────────────────
+  document.getElementById('goBtn').onclick = play;
+  inp.addEventListener('keydown', e=>{
+    if(e.key === 'Enter'){ e.preventDefault(); play(); }
+  });
+  addEventListener('keydown', e=>{
+    if(document.activeElement === inp){
+      if(e.key === 'Escape') inp.blur();
+      return;
+    }
+    if(e.key === ' '){ e.preventDefault(); randBtn.click(); }
+    if(/^[0-9]$/.test(e.key)){
+      const idx = e.key === '0' ? 9 : (+e.key - 1);
+      if(EFFECTS[idx]){ effect = EFFECTS[idx].id; syncChips(); play(); }
+    }
+  });
+
+  syncChips();
+  inp.focus();
+})();
+</script>
+</body>
+</html>
