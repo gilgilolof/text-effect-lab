@@ -568,12 +568,10 @@
     return true;
   }
 
+  // restore()가 effect를 바꾸므로 칩 하이라이트는 그 뒤에 맞춘다
+  const fromLink = restore();
   syncChips();
-  if(restore()){
-    play();
-  }else{
-    inp.focus();
-  }
+  if(fromLink) play(); else inp.focus();
 })();
 </script>
 </body>
