@@ -185,6 +185,24 @@
   .go{background:var(--accent);color:#111;border-radius:12px;padding:0 20px;
     font-size:15px;font-weight:800;white-space:nowrap;min-height:48px}
   .go:active{transform:scale(.97)}
+  .share{
+    background:#0E1016;border:1.5px solid var(--line);color:var(--ink);
+    border-radius:12px;width:52px;min-height:48px;font-size:19px;flex:0 0 auto;
+  }
+  .share:active{transform:scale(.97);border-color:var(--accent)}
+
+  .banner{
+    position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:3;
+    background:rgba(255,205,0,.14);border:1px solid rgba(255,205,0,.4);color:var(--accent);
+    border-radius:999px;padding:6px 14px;font-size:12px;font-weight:700;white-space:nowrap;
+  }
+  .toast{
+    position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:50;
+    background:#fff;color:#111;border-radius:999px;padding:11px 20px;
+    font-size:13.5px;font-weight:800;box-shadow:0 8px 28px rgba(0,0,0,.45);
+    animation:toastIn .25s ease-out;
+  }
+  @keyframes toastIn{from{opacity:0;transform:translate(-50%,10px)}}
 
   .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
   .chip{
@@ -221,6 +239,7 @@
     .chip{flex:0 0 auto}
     .sliders{gap:10px}
     .sl{min-width:100%}
+    .share{width:48px}
     .hint{display:none}           /* 단축키 안내는 데스크톱 전용 */
   }
   /* 가로 모드에서 무대가 너무 납작해지지 않게 */
@@ -240,12 +259,15 @@
   <div class="stage" id="stage">
     <canvas id="fx"></canvas>
     <div class="text" id="text"><span class="empty">텍스트를 입력하고 Enter를 눌러보세요</span></div>
+    <div class="banner" id="banner" hidden>💌 친구가 보낸 이펙트예요</div>
   </div>
+  <div class="toast" id="toast" hidden></div>
 
   <div class="panel">
     <div class="inputRow">
       <input type="text" id="inp" maxlength="24" placeholder="여기에 아무 말이나 입력해보세요" autocomplete="off">
       <button class="go" id="goBtn">터뜨리기</button>
+      <button class="share" id="shareBtn" title="이 이펙트 링크 공유하기" aria-label="공유하기">🔗</button>
     </div>
 
     <div class="chips" id="chips"></div>
@@ -267,7 +289,8 @@
   </div>
 
   <p class="hint">
-    <kbd>Enter</kbd> 터뜨리기 · <kbd>Space</kbd> 랜덤 이펙트로 다시 · <kbd>1</kbd>~<kbd>0</kbd> 이펙트 바로 선택
+    <kbd>Enter</kbd> 터뜨리기 · <kbd>Space</kbd> 랜덤 이펙트로 다시 · <kbd>1</kbd>~<kbd>0</kbd> 이펙트 바로 선택<br>
+    🔗 버튼을 누르면 지금 이펙트를 그대로 볼 수 있는 링크가 복사됩니다
   </p>
 </div>
 
@@ -375,6 +398,7 @@
     apply();
     burst();
     bursts++; elCnt.textContent = bursts + '번 터뜨림';
+    syncURL();
   }
 
   // ── 파티클 ──────────────────────────
@@ -455,8 +479,101 @@
     }
   });
 
+  // ── 공유 링크 ───────────────────────
+  // 현재 상태(텍스트·이펙트·슬라이더)를 쿼리스트링에 담아
+  // 주소창을 항상 "지금 보이는 것"과 일치시킨다.
+  function currentURL(){
+    const u = new URL(location.href);
+    u.hash = '';
+    u.search = '';
+    const q = new URLSearchParams();
+    q.set('t', inp.value.trim());
+    q.set('fx', effect);
+    if(sz !== 1)       q.set('sz', Math.round(sz*100));
+    if(speed !== 1)    q.set('sp', Math.round(speed*100));
+    if(ptLevel !== 2)  q.set('pt', ptLevel);
+    u.search = q.toString();
+    return u.toString();
+  }
+
+  function syncURL(){
+    try{ history.replaceState(null, '', currentURL()); }catch(e){}
+  }
+
+  function toast(msg){
+    const el = document.getElementById('toast');
+    el.textContent = msg; el.hidden = false;
+    clearTimeout(toast._t);
+    toast._t = setTimeout(()=>{ el.hidden = true; }, 2200);
+  }
+
+  async function share(){
+    const raw = inp.value.trim();
+    if(!raw){ toast('먼저 텍스트를 입력해주세요'); inp.focus(); return; }
+    play();
+    const url = currentURL();
+    const fxName = (EFFECTS.find(e=>e.id===effect)||{}).name || '';
+
+    // 모바일: 네이티브 공유 시트 (카카오톡·메시지 등으로 바로 전달)
+    if(navigator.share){
+      try{
+        await navigator.share({ title:'텍스트 이펙트 랩', text:`"${raw}" — ${fxName} 이펙트`, url });
+        return;
+      }catch(e){
+        if(e && e.name === 'AbortError') return;   // 사용자가 취소한 경우
+      }
+    }
+    // 데스크톱: 클립보드 복사
+    try{
+      await navigator.clipboard.writeText(url);
+      toast('🔗 링크를 복사했어요');
+    }catch(e){
+      // 클립보드 권한이 없는 환경 대비
+      const ta = document.createElement('textarea');
+      ta.value = url; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.select();
+      const ok = document.execCommand && document.execCommand('copy');
+      ta.remove();
+      toast(ok ? '🔗 링크를 복사했어요' : '복사에 실패했어요. 주소창을 복사해주세요');
+    }
+  }
+
+  document.getElementById('shareBtn').onclick = share;
+  inp.addEventListener('input', ()=>{ document.getElementById('banner').hidden = true; });
+
+  // ── 링크로 들어온 경우 상태 복원 ──────────
+  function restore(){
+    const q = new URLSearchParams(location.search);
+    const t = q.get('t');
+    if(!t) return false;
+
+    inp.value = t.slice(0, +inp.maxLength || 24);
+
+    const fx = q.get('fx');
+    if(EFFECTS.some(e=>e.id===fx)) effect = fx;
+
+    const setRange = (key, id, valId, fn, fmt)=>{
+      const v = parseInt(q.get(key), 10);
+      if(isNaN(v)) return;
+      const el = document.getElementById(id);
+      const cl = Math.min(+el.max, Math.max(+el.min, v));
+      el.value = cl; fn(cl);
+      document.getElementById(valId).textContent = fmt(cl);
+    };
+    setRange('sz','sz','szV', v=>{ sz = v/100; }, v=>v+'%');
+    setRange('sp','sp','spV', v=>{ speed = v/100; }, v=>(v/100).toFixed(1)+'x');
+    setRange('pt','pt','ptV', v=>{ ptLevel = v; }, v=>['없음','약하게','보통','강하게'][v]);
+
+    document.getElementById('banner').hidden = false;
+    return true;
+  }
+
   syncChips();
-  inp.focus();
+  if(restore()){
+    play();
+  }else{
+    inp.focus();
+  }
 })();
 </script>
 </body>
