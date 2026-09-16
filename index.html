@@ -368,8 +368,20 @@
 
   // ── 입력 ────────────────────────────
   document.getElementById('goBtn').onclick = play;
+
+  // 한글 등 IME 조합 중에는 Enter가 keydown에서 삼켜지므로(keyCode 229),
+  // 조합이 끝난 뒤 한 번 더 확인해서 실행한다.
+  let pendingEnter = false;
   inp.addEventListener('keydown', e=>{
-    if(e.key === 'Enter'){ e.preventDefault(); play(); }
+    if(e.key !== 'Enter') return;
+    if(e.isComposing || e.keyCode === 229){ pendingEnter = true; return; }
+    e.preventDefault(); pendingEnter = false; play();
+  });
+  inp.addEventListener('compositionend', ()=>{
+    if(pendingEnter){ pendingEnter = false; play(); }
+  });
+  inp.addEventListener('keyup', e=>{
+    if(e.key === 'Enter' && pendingEnter){ pendingEnter = false; play(); }
   });
   addEventListener('keydown', e=>{
     if(document.activeElement === inp){
